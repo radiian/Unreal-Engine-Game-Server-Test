@@ -15,12 +15,15 @@ namespace TestGameServer
         private int c_id;   //Client network id
         private Server c_caller;    //the calling server
 
+        private DateTime lastContact = new DateTime(2000, 1, 1, 0, 0, 0);   //a default value for safety
+
         Thread listenThread;    //The listener thread for the client
 
         public Client(int ID, Socket Sock, Server caller)
         {
             c_id = ID;
             c_sock = Sock;
+            lastContact = DateTime.Now;
             Console.WriteLine("Client logged in and was assigned id " + c_id.ToString());
             listenThread = new Thread(new ThreadStart(this.ThreadLoop));
             listenThread.Start();
@@ -37,11 +40,15 @@ namespace TestGameServer
                     //socket disconnected
                     break;
                 }
-                while (c_sock.Available > 0)
+                int avail = c_sock.Available;
+                while (avail > 0)
                 {
-                    byte[] buff = new byte[c_sock.Available];
+                    byte[] buff = new byte[avail];
                     c_sock.Receive(buff);
                     //Ok now do something with the data
+                    parseData(buff, avail);
+
+                    avail = c_sock.Available;
                 }
             }
             //Now inform the server that this client is closed
@@ -58,6 +65,22 @@ namespace TestGameServer
         public int getId()
         {
             return c_id;
+        }
+
+        //Parse the data received from this client
+        private void parseData(byte[] buffer, int length)
+        {
+
+            //This is a really weird quirk of UE4's StringToBytes()
+            //algorithm, all the characters need to be incremented by one
+            for(int i = 0; i < length; ++i)
+            {
+                char c = (char)buffer[i];
+                buffer[i] = (byte) (c + 1);
+            }
+            //string test = Encoding.ASCII.GetString(buffer);
+            string test = Encoding.UTF8.GetString(buffer);
+            Console.WriteLine("Received from client " + c_id.ToString() + ": " + test);
         }
 
         public void TestSend()
