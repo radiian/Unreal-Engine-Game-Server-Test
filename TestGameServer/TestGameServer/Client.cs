@@ -27,6 +27,12 @@ namespace TestGameServer
             Console.WriteLine("Client logged in and was assigned id " + c_id.ToString());
             listenThread = new Thread(new ThreadStart(this.ThreadLoop));
             listenThread.Start();
+            byte[] c_idBuffer = BitConverter.GetBytes((Int32)c_id);
+            byte[] cidMessage = new byte[6];
+            cidMessage[0] = 0xAA;   //0xAA is binary 10101010, the indicator that we're sending the client their id
+            //cidMessage.CopyTo(c_idBuffer, 1);
+            c_idBuffer.CopyTo(cidMessage, 1);
+            c_sock.Send(cidMessage);
             
         }
 
@@ -73,14 +79,40 @@ namespace TestGameServer
 
             //This is a really weird quirk of UE4's StringToBytes()
             //algorithm, all the characters need to be incremented by one
-            for(int i = 0; i < length; ++i)
+
+            if (buffer[0] == 0x01)
             {
-                char c = (char)buffer[i];
-                buffer[i] = (byte) (c + 1);
+                byte[] sId = new byte[4];
+                for(int i = 0; i < 4; ++i)
+                {
+                    sId[i] = buffer[i + 1];
+                }
+                //This is not working the way it should, getting bogus data
+                int senderId = BitConverter.ToInt32(sId, 0);
+
+                if (senderId != this.c_id)
+                {
+                    Console.WriteLine("Holy fucking shit this aint right!");
+                    Console.WriteLine("Expected client id " + c_id.ToString() + " but go " + senderId.ToString());
+                }
+                int datLen = buffer[5];
+                if(datLen != length)
+                {
+                    Console.WriteLine("Data mismatch!");
+                    Console.WriteLine("dat len is " + datLen.ToString() + " and full length is " + length.ToString());
+                }
+
+                //This was way harder than it should have been, honestly I don't know why I do this shit so late at night
+                for (int i = 6; i < datLen; ++i)
+                {
+                    char c = (char)buffer[i];
+                    buffer[i] = (byte)(c + 1);
+                }
+                //string test = Encoding.ASCII.GetString(buffer);
+                string test = Encoding.UTF8.GetString(buffer, 6, (int)datLen-6);
+                Console.WriteLine("Received from client " + c_id.ToString() + ": " + test);
+                c_caller.Chat(this, test);
             }
-            //string test = Encoding.ASCII.GetString(buffer);
-            string test = Encoding.UTF8.GetString(buffer);
-            Console.WriteLine("Received from client " + c_id.ToString() + ": " + test);
         }
 
         public void TestSend()
