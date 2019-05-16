@@ -43,13 +43,14 @@ namespace TestGameServer
             }
         }
 
-        public void Chat(Client C, string message)
+        public void Chat(Client C, byte[] message, int size)
         {
             foreach(Client c_ in clients)
             {
                 if(c_.getId() != C.getId())
                 {
-                    //c_.SendData()
+                    //Console.WriteLine("Sending data to client " + c_.getId());
+                    c_.SendData(message, size);
                 }
             }
             //chatLog.Add(new ChatDat(C.getId(), message));

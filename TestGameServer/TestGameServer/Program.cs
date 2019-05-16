@@ -29,7 +29,7 @@ namespace TestGameServer
         {
             string sqlStr = "server=10.0.0.119;user=testuser;database=testdb;port=3306;password=password";
             MySqlConnection dbConn = new MySqlConnection(sqlStr);
-            try
+           /* try
             {
                 dbConn.Open();
                 Console.WriteLine("Connected to MySQL server");
@@ -38,7 +38,7 @@ namespace TestGameServer
             {
                 Console.WriteLine("Failed to connect to MySQL Server: " + ex.ToString());
             }
-            dbConn.Close();
+            dbConn.Close();*/
             Server testServer = new Server();
             Console.ReadLine();
         }
