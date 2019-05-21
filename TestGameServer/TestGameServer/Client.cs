@@ -119,10 +119,17 @@ namespace TestGameServer
             //This is a really weird quirk of UE4's StringToBytes()
             //algorithm, all the characters need to be incremented by one
 
-            if (buffer[0] == 0x01)
+            byte packetId = buffer[0];
+
+            switch (packetId)
             {
-                c_caller.Chat(this, buffer, buffer[5]);
+                case 0x01: c_caller.Chat(this, buffer, buffer[5]);
+                    break;
+
+                default: { }
+                    break;
             }
+
         }
 
         public void TestSend()
