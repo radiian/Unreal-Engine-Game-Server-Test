@@ -46,10 +46,46 @@ namespace TestGameServer
              */
 
 
+
+            //Using hardcoded IP addresses can be a real pain for software sometimes.
+            //The Domain Name System makes it easy to connect to services via a hostname
+            //instead of a squishy IP Address. This little snippet of code gets the ip
+            //address of the database server based on the host name of the database server.
+            //Note that srvAddr is instantiated as null and won't cause problems because
+            //if the server is not found, the application will throw an error and exit before
+            //the address is ever used. Otherwise srvAddr is replaced with the appropriate
+            //address for the server.
+            IPAddress srvAddr = null;
+            try
+            {
+                //Resolve a list of IPAddresses from a singular hostname (can have multiple ip addresses in a DNS record)
+                IPAddress[] addresses = Dns.GetHostAddresses("database.lab.local");
+
+                //If there are none returned, we error (even though if the host lookup fails it will throw an error anyways)
+                if (addresses.Length > 0)
+                {
+                    //set srvAddr to the first address in the list
+                    srvAddr = addresses[0];
+                }
+                else
+                {
+                    Console.WriteLine("Could not resolve host name for database server!");
+                    Console.ReadLine();
+                    Environment.Exit(-1);
+                }
+            }
+            catch(Exception ex)
+            {
+                Console.WriteLine("Could not resolve host name for database server!");
+                Console.ReadLine();
+                Environment.Exit(-1);
+            }
+            
+
             //SQL Server connection string
             //This particular server is not running on the development machine which is why we are not using 127.0.0.1 for
             //the ip address. For something like this, a remote SQL server may be best, may not be.
-            string sqlStr = "server=10.0.0.119;user=testuser;database=testdb;port=3306;password=password";
+            string sqlStr = "server="+ srvAddr.ToString() +";user=testuser;database=testdb;port=3306;password=password";
 
             //The actual database connection object
             MySqlConnection dbConn = new MySqlConnection(sqlStr);
@@ -67,6 +103,7 @@ namespace TestGameServer
                 //A SQL query/command string
                 //A great example is selecting a singular user, but this one gets all of them for testing
                 string qry = "SELECT * FROM Users";
+                //string qry = "SELECT Password FROM Users WHERE Username='TestUser'";
 
                 //Create a command object to execute the command
                 MySqlCommand cmd = new MySqlCommand(qry, dbConn);
@@ -76,6 +113,12 @@ namespace TestGameServer
                 //See https://dev.mysql.com/doc/connector-net/en/connector-net-tutorials-sql-command.html for better documentation
                 //For this example we want a MySqlDataReader 
                 MySqlDataReader rdr = cmd.ExecuteReader();
+
+                //object result = cmd.ExecuteScalar();
+                //if(result != null)
+                //{
+                //    Console.WriteLine(result.ToString());
+                //}
 
 
                 //One of the most useful things to do with a database query is to determine how many rows were returned
@@ -97,6 +140,7 @@ namespace TestGameServer
                 { 
 
                     //And this is not a useful line of code because it doesnt work, but you get the idea
+                    
                     Console.WriteLine(rows.Rows[i].ToString());
                 }
 
